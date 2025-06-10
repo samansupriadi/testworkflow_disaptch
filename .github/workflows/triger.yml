@@ -14,10 +14,62 @@ on:
 jobs:
   set_target_env:
     name: Define Environment
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Development
+      labels: [self-hosted,Linux,X64,Development]
+    outputs:
+      env_app: ${{ steps.set_env.outputs.env_value }}
+      target_deploy: ${{ steps.set_env.outputs.targetDeploy }}
+      branch:  ${{ steps.set_env.outputs.getBranchName }}
     steps:
-      - name: print
+      - id: set_env
         run: |
+          env_value=0
+          targetDeploy=${{  inputs.DeployTo != null && inputs.DeployTo || null }}
+          type=${{ github.event_name == 'pull_request' && 'pull_request' ||  'workflow_disaptch' }}
           getBranchName=${{ github.event_name == 'pull_request' && github.base_ref || github.event_name == 'workflow_dispatch' &&  github.ref_name}}   
+
+          echo "==============================      $getBranchName     ====================================="
           
-          echo "${{ inputs.DeployTo }} $getBranchName"
+          if [[ "$type" == 'workflow_disaptch' ]]; then
+            validate=${{ github.ref_name == 'main' || startsWith(github.event.ref, 'refs/tags') && true || false }}
+            if [ "$validate" != "true" ]; then
+                echo "::error::Worflow only can triger manually from tag and main branch"
+                exit 1
+            fi
+          fi
+
+          if [[ "$getBranchName" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ || "$getBranchName" == 'main' ]] && [[ "$targetDeploy" != NULL ]]; then
+            if [[ "$targetDeploy" == 'all-production' ]]; then
+              env_value='production'
+              echo "====================== production  ===================================="
+            else
+              env_value="$targetDeploy"
+              echo "====================== $targetDeploy  ===================================="
+            fi
+          elif [[ "$getBranchName" == 'staging-qa' ]]; then
+            env_value='staging'
+            echo "====================== staging ===================================="
+          elif [[ "$getBranchName" == 'development' || "$getBranchName" == *devops-multideploy* ]]; then
+              env_value='development'
+              echo "====================== development ==================================="
+          fi
+      
+
+          JOBS=""
+          if [[ "$getBranchName" =~ ^[vV][0-9]+\.[0-9]+\.[0-9]+(-[0-9a-zA-Z.-]+)?(\+[0-9a-zA-Z.-]+)?$ ]]; then
+              JOBS="main"
+          else
+              JOBS="$getBranchName"
+          fi
+          echo "${{ inputs.DeployTo }} $getBranchName $JOBS"
+
+
+
+
+
+
+
+
+
+     
