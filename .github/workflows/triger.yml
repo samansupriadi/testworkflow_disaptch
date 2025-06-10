@@ -1,0 +1,21 @@
+name: Deploy To Production
+on:
+  workflow_dispatch:
+    inputs:
+      DeployTo:
+        description: 'Deploy To'
+        default: 'ALL'
+        type: choice
+        options:
+        - ALL
+        - PGN-MOBILE
+        - RELYON
+
+jobs:
+  set_target_env:
+    name: Define Environment
+    runs-on: ubuntu-latest
+    steps:
+      - name: print
+        run: |
+          echo ${{ inputs.DeployTo }}
