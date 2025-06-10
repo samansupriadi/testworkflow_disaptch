@@ -7,16 +7,14 @@ on:
         default: 'ALL'
         type: choice
         options:
-        - ALL
+        - all-production
         - PGN-MOBILE
         - RELYON
 
 jobs:
   set_target_env:
     name: Define Environment
-    runs-on:
-      group: Development
-      labels: [self-hosted,Linux,X64,Development]
+    runs-on: ubuntu-latest
     outputs:
       env_app: ${{ steps.set_env.outputs.env_value }}
       target_deploy: ${{ steps.set_env.outputs.targetDeploy }}
@@ -39,7 +37,7 @@ jobs:
             fi
           fi
 
-          if [[ "$getBranchName" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ || "$getBranchName" == 'main' ]] && [[ "$targetDeploy" != NULL ]]; then
+          if [[ "$getBranchName" =~ ^[vV][0-9]+\.[0-9]+\.[0-9]+(-[0-9a-zA-Z.-]+)?(\+[0-9a-zA-Z.-]+)?$ || "$getBranchName" == 'main' ]] && [[ "$targetDeploy" != NULL ]]; then
             if [[ "$targetDeploy" == 'all-production' ]]; then
               env_value='production'
               echo "====================== production  ===================================="
